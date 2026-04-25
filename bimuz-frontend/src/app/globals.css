@@ -1,0 +1,106 @@
+@import "tailwindcss";
+@reference "tailwindcss";
+
+:root {
+  --primary: #1e293b;
+  --primary-blue: #0047ab;
+  --secondary-blue: #3b82f6;
+  --bg-light: #f8fafc;
+  --white: #ffffff;
+  --input-bg: #f1f5f9;
+}
+
+body {
+  background-color: var(--bg-light);
+  color: var(--primary);
+  font-family: var(--font-inter), sans-serif;
+}
+
+.bimuz-card {
+  @apply bg-white border border-slate-100 rounded-2xl shadow-sm transition-all;
+}
+
+.bimuz-btn-primary {
+  @apply bg-[#0047ab] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#003da1] transition-all active:scale-95 shadow-lg shadow-blue-500/20 cursor-pointer;
+}
+
+.admin-input {
+  @apply bg-[#f1f5f9] border-none rounded-xl p-4 text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all w-full;
+}
+
+.admin-table-row {
+  @apply bg-white rounded-2xl transition-all hover:shadow-md mb-3 p-4;
+}
+
+.admin-title-accent {
+  @apply border-b-4 border-[#0047ab] inline-block pb-1;
+}
+
+/* --- ANIMATIONS --- */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@utility animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@utility animate-fade-in-scale {
+  animation: fadeInScale 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@utility animate-slide-in-left {
+  animation: slideInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Staggered delay helpers */
+@utility delay-1 { animation-delay: 0.1s; }
+@utility delay-2 { animation-delay: 0.2s; }
+@utility delay-3 { animation-delay: 0.3s; }
+@utility delay-4 { animation-delay: 0.4s; }
+@utility delay-5 { animation-delay: 0.5s; }
+
+/* Interactive animations */
+.hover-lift {
+  @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10;
+}
+
+.hover-glow {
+  @apply transition-all duration-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:border-blue-400;
+}
+
+.page-transition {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+
