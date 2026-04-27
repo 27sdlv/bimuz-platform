@@ -102,11 +102,12 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+# Remove STATICFILES_DIRS if you don't have a local 'static' folder
+# STATICFILES_DIRS = [
+#     BASE_DIR / 'static',
+# ]
 
 
 
