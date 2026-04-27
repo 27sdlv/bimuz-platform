@@ -71,7 +71,7 @@ WSGI_APPLICATION = 'online_courses.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgres://postgres:A062706a@localhost:5432/bimuz_db',
+        default='postgresql://postgres:MWavRDCJFVjqTgWeBchYSspCNOGByPeJ@postgres.railway.internal:5432/railway',
         conn_max_age=600
     )
 }
