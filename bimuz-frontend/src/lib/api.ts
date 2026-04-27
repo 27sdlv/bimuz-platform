@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -47,78 +47,78 @@ api.interceptors.response.use(
 );
 
 export const authApi = {
-  login: (data: any) => api.post('/auth/login/', data),
-  register: (data: any) => api.post('/auth/register/', data),
-  me: () => api.get('/auth/me/'),
+  login: (data: any) => api.post('auth/login/', data),
+  register: (data: any) => api.post('auth/register/', data),
+  me: () => api.get('auth/me/'),
 };
 
 export const courseApi = {
-  list: () => api.get('/courses/'),
-  get: (id: string) => api.get(`/courses/${id}/`),
-  enroll: (id: string) => api.post(`/courses/${id}/enroll/`),
-  enrolled: () => api.get('/courses/enrolled/'),
-  create: (data: FormData) => api.post('/courses/', data, {
+  list: () => api.get('courses/'),
+  get: (id: string) => api.get(`courses/${id}/`),
+  enroll: (id: string) => api.post(`courses/${id}/enroll/`),
+  enrolled: () => api.get('courses/enrolled/'),
+  create: (data: FormData) => api.post('courses/', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-  update: (id: string, data: FormData) => api.patch(`/courses/${id}/`, data, {
+  update: (id: string, data: FormData) => api.patch(`courses/${id}/`, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-  remove: (id: string) => api.delete(`/courses/${id}/`),
+  remove: (id: string) => api.delete(`courses/${id}/`),
 };
 
 export const lessonApi = {
-  list: (courseId: string) => api.get(`/lessons/?course_id=${courseId}`),
-  get: (id: string) => api.get(`/lessons/${id}/`),
-  complete: (id: string) => api.post(`/lessons/${id}/complete/`),
-  create: (data: FormData) => api.post('/lessons/', data, {
+  list: (courseId: string) => api.get(`lessons/?course_id=${courseId}`),
+  get: (id: string) => api.get(`lessons/${id}/`),
+  complete: (id: string) => api.post(`lessons/${id}/complete/`),
+  create: (data: FormData) => api.post('lessons/', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-  update: (id: string, data: FormData) => api.patch(`/lessons/${id}/`, data, {
+  update: (id: string, data: FormData) => api.patch(`lessons/${id}/`, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-  remove: (id: string) => api.delete(`/lessons/${id}/`),
+  remove: (id: string) => api.delete(`lessons/${id}/`),
 };
 
 export const homeworkApi = {
-  submit: (data: FormData) => api.post('/homework/', data, {
+  submit: (data: FormData) => api.post('homework/', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-  list: () => api.get('/homework/'),
-  approve: (id: string) => api.post(`/homework/${id}/approve/`),
-  reject: (id: string, feedback: string) => api.post(`/homework/${id}/reject/`, { feedback }),
+  list: () => api.get('homework/'),
+  approve: (id: string) => api.post(`homework/${id}/approve/`),
+  reject: (id: string, feedback: string) => api.post(`homework/${id}/reject/`, { feedback }),
 };
 
 export const groupApi = {
-  list: () => api.get('/groups/', { headers: { 'X-Skip-Auth': '1' } }),
-  create: (data: any) => api.post('/groups/', data),
-  update: (id: string, data: any) => api.patch(`/groups/${id}/`, data),
-  remove: (id: string) => api.delete(`/groups/${id}/`),
+  list: () => api.get('groups/', { headers: { 'X-Skip-Auth': '1' } }),
+  create: (data: any) => api.post('groups/', data),
+  update: (id: string, data: any) => api.patch(`groups/${id}/`, data),
+  remove: (id: string) => api.delete(`groups/${id}/`),
 };
 
 export const adminApi = {
   users: {
-    list: () => api.get('/admin/users/'),
-    create: (data: any) => api.post('/admin/users/', data),
-    update: (id: string, data: any) => api.patch(`/admin/users/${id}/`, data),
-    remove: (id: string) => api.delete(`/admin/users/${id}/`),
+    list: () => api.get('admin/users/'),
+    create: (data: any) => api.post('admin/users/', data),
+    update: (id: string, data: any) => api.patch(`admin/users/${id}/`, data),
+    remove: (id: string) => api.delete(`admin/users/${id}/`),
   },
   enrollments: {
-    list: () => api.get('/admin/enrollments/'),
-    create: (data: any) => api.post('/admin/enrollments/', data),
-    update: (id: string, data: any) => api.patch(`/admin/enrollments/${id}/`, data),
-    remove: (id: string) => api.delete(`/admin/enrollments/${id}/`),
+    list: () => api.get('admin/enrollments/'),
+    create: (data: any) => api.post('admin/enrollments/', data),
+    update: (id: string, data: any) => api.patch(`admin/enrollments/${id}/`, data),
+    remove: (id: string) => api.delete(`admin/enrollments/${id}/`),
   },
   progress: {
-    list: () => api.get('/admin/progress/'),
-    create: (data: any) => api.post('/admin/progress/', data),
-    update: (id: string, data: any) => api.patch(`/admin/progress/${id}/`, data),
-    remove: (id: string) => api.delete(`/admin/progress/${id}/`),
+    list: () => api.get('admin/progress/'),
+    create: (data: any) => api.post('admin/progress/', data),
+    update: (id: string, data: any) => api.patch(`admin/progress/${id}/`, data),
+    remove: (id: string) => api.delete(`admin/progress/${id}/`),
   },
   watches: {
-    list: () => api.get('/admin/watches/'),
-    create: (data: any) => api.post('/admin/watches/', data),
-    update: (id: string, data: any) => api.patch(`/admin/watches/${id}/`, data),
-    remove: (id: string) => api.delete(`/admin/watches/${id}/`),
+    list: () => api.get('admin/watches/'),
+    create: (data: any) => api.post('admin/watches/', data),
+    update: (id: string, data: any) => api.patch(`admin/watches/${id}/`, data),
+    remove: (id: string) => api.delete(`admin/watches/${id}/`),
   },
 };
 

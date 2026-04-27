@@ -27,7 +27,10 @@ export default function Home() {
     try {
       setEnrollingCourseId(courseId);
       await courseApi.enroll(String(courseId));
-      alert("Kursga muvaffaqiyatli yozildingiz. Endi kurs kabinetda ko'rinadi.");
+      // Update local state immediately so button changes without refresh
+      setCourses(prev => prev.map(course => 
+        course.id === courseId ? { ...course, is_enrolled: true } : course
+      ));
     } catch (error) {
       console.error('Failed to enroll:', error);
       alert("Kursga yozilish uchun avval tizimga kiring.");
