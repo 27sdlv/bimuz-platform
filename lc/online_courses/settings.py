@@ -1,9 +1,15 @@
 import os
+import dj_database_url
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = 'django-insecure-online-courses-secret-key-change-in-production'
-DEBUG = True
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-online-courses-secret-key-change-in-production')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+
 ALLOWED_HOSTS = ['*']
 
 
@@ -64,14 +70,10 @@ WSGI_APPLICATION = 'online_courses.wsgi.application'
 
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bimuz_db',
-        'USER': 'postgres',
-        'PASSWORD': 'A062706a',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default='postgres://postgres:A062706a@localhost:5432/bimuz_db',
+        conn_max_age=600
+    )
 }
 
 AUTH_USER_MODEL = 'lc.CustomUser'
