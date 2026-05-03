@@ -1,15 +1,9 @@
 import os
-import dj_database_url
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-online-courses-secret-key-change-in-production')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-
+SECRET_KEY = 'django-insecure-online-courses-secret-key-change-in-production'
+DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 
@@ -70,10 +64,14 @@ WSGI_APPLICATION = 'online_courses.wsgi.application'
 
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgresql://postgres:MWavRDCJFVjqTgWeBchYSspCNOGByPeJ@postgres.railway.internal:5432/railway',
-        conn_max_age=600
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'bimuz_db',
+        'USER': 'postgres',
+        'PASSWORD': 'A062706a',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 
 AUTH_USER_MODEL = 'lc.CustomUser'
@@ -102,12 +100,11 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Remove STATICFILES_DIRS if you don't have a local 'static' folder
-# STATICFILES_DIRS = [
-#     BASE_DIR / 'static',
-# ]
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 
 
