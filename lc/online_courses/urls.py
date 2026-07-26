@@ -12,7 +12,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from django.urls import re_path
-from lc.utils import serve_range_file
+from online_courses.media_utils import serve_range_file
 
 def dev_media_serve(request, path):
     full_path = os.path.join(settings.MEDIA_ROOT, path)
@@ -23,7 +23,7 @@ def dev_media_serve(request, path):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('lc.urls')),
+    path('api/', include('online_courses.api_urls')),
 ]
 
 import os

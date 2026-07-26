@@ -93,6 +93,8 @@ export default function DashboardPage() {
   const [isLessonEditModalOpen, setIsLessonEditModalOpen] = useState(false);
   const [lessonVideoFile, setLessonVideoFile] = useState<File | null>(null);
   const [courseThumbnail, setCourseThumbnail] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [adminUserForm, setAdminUserForm] = useState({
     username: '',
@@ -281,13 +283,24 @@ export default function DashboardPage() {
     if (lessonForm.video_url) formData.append('video_url', lessonForm.video_url);
     if (lessonVideoFile) formData.append('video_file', lessonVideoFile);
 
+    setIsUploading(true);
+    setUploadProgress(0);
+
     try {
-      await lessonApi.create(formData);
+      await lessonApi.create(formData, (progressEvent: any) => {
+        if (progressEvent.total) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
+        }
+      });
       setLessonForm({ ...lessonForm, title: '', description: '', homework_task: '', video_url: '', order: '0' });
       setLessonVideoFile(null);
       await fetchLessons(lessonForm.course);
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -316,13 +329,23 @@ export default function DashboardPage() {
       if (lessonForm.video_url) formData.append('video_url', lessonForm.video_url);
       if (lessonVideoFile) formData.append('video_file', lessonVideoFile);
 
-      await lessonApi.update(editingLesson.id, formData);
+      setIsUploading(true);
+      setUploadProgress(0);
+
+      await lessonApi.update(editingLesson.id, formData, (progressEvent: any) => {
+        if (progressEvent.total) {
+          setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+        }
+      });
       setIsLessonEditModalOpen(false);
       setEditingLesson(null);
       setLessonVideoFile(null);
       await fetchLessons(lessonForm.course);
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -443,6 +466,16 @@ export default function DashboardPage() {
   };
 
   const [activeTab, setActiveTab] = useState<'Dashboard' | 'Courses' | 'Lessons' | 'Students'>('Dashboard');
+
+  // Auto-load lessons for the first course when Lessons tab is opened
+  useEffect(() => {
+    if (activeTab === 'Lessons' && allCourses.length > 0 && !lessonForm.course) {
+      const firstCourseId = String(allCourses[0].id);
+      setLessonForm((prev) => ({ ...prev, course: firstCourseId }));
+      fetchLessons(firstCourseId);
+    }
+  }, [activeTab, allCourses]);
+
   if (loading) return <div className="p-10 text-center font-bold">Yuklanmoqda...</div>;
   const isAdmin = Boolean(user?.is_admin);
   const pendingHomeworks = homeworks.filter((hw) => hw.status === 'pending');
@@ -500,17 +533,17 @@ export default function DashboardPage() {
         <div className="mb-10">
           <h2 className="text-xl font-black text-slate-900 tracking-tighter">BIMuz Admin</h2>
           <div className="mt-6">
-            <p className="text-blue-700 font-black text-lg">The Engineering Authority</p>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Admin Console</p>
+            <p className="text-blue-700 font-black text-lg">Muhandislik avtoriteti</p>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Admin paneli</p>
           </div>
         </div>
 
         <nav className="flex-grow space-y-2">
           {[
-            { id: 'Dashboard', name: 'Dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
-            { id: 'Courses', name: 'Courses', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-            { id: 'Lessons', name: 'Lessons', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
-            { id: 'Students', name: 'Students', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+            { id: 'Dashboard', name: 'Boshqaruv paneli', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+            { id: 'Courses', name: 'Kurslar', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+            { id: 'Lessons', name: 'Darslar', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
+            { id: 'Students', name: 'Talabalar', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
           ].map((item) => (
             <button 
               key={item.id} 
@@ -526,7 +559,7 @@ export default function DashboardPage() {
         <div className="mt-auto">
           <button className="w-full flex items-center gap-4 px-4 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-all">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            Help Center
+            Yordam markazi
           </button>
         </div>
       </aside>
@@ -703,7 +736,16 @@ export default function DashboardPage() {
                       <label className="block text-sm font-bold text-slate-600 mb-2">Uyga vazifa (Homework Task)</label>
                       <textarea className="admin-input h-32 resize-none border-blue-100 bg-blue-50/10" placeholder="Talaba bajarishi kerak bo'lgan amaliy vazifa matni..." value={lessonForm.homework_task} onChange={(e) => setLessonForm({ ...lessonForm, homework_task: e.target.value })} />
                     </div>
-                    <button className="bimuz-btn-primary w-full shadow-blue-200">Dars yaratish</button>
+                    <button disabled={isUploading} className={`bimuz-btn-primary w-full shadow-blue-200 ${isUploading ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                      {isUploading ? `Yuklanmoqda... ${uploadProgress}%` : 'Dars yaratish'}
+                    </button>
+                    {isUploading && (
+                      <div className="w-full bg-slate-100 rounded-full h-3 mt-4 overflow-hidden border border-slate-200">
+                        <div className="bg-blue-600 h-3 rounded-full transition-all duration-300 relative" style={{ width: `${uploadProgress}%` }}>
+                           <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                        </div>
+                      </div>
+                    )}
                   </form>
                 </div>
                 <div className="mt-12 space-y-4">
@@ -711,38 +753,72 @@ export default function DashboardPage() {
                     Darslar ro'yxati
                     <span className="bg-slate-200 text-slate-600 px-3 py-1 rounded-full text-xs">{lessons.length}</span>
                   </h2>
-                  {lessonForm.course ? (
-                    lessons.length > 0 ? (
-                      lessons.map((lesson) => (
-                        <div key={lesson.id} className="admin-table-row flex items-center justify-between">
+                  {!lessonForm.course ? (
+                    <div className="text-center py-10 bg-slate-50 border border-slate-100 rounded-3xl text-slate-400 font-bold">
+                      Darslar ro'yxatini ko'rish uchun kursni tanlang.
+                    </div>
+                  ) : lessons.length === 0 ? (
+                    <div className="text-center py-10 bg-white border-2 border-dashed border-slate-100 rounded-3xl text-slate-400 font-bold">
+                      Ushbu kursda hali darslar yo'q.
+                    </div>
+                  ) : (
+                    lessons.map((lesson) => (
+                      <div key={lesson.id} className="bimuz-card p-6 space-y-4">
+                        {/* Lesson header row */}
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center font-black text-slate-400">
-                               {lesson.order}
-                             </div>
-                             <div>
-                               <h3 className="font-bold text-slate-900">{lesson.title}</h3>
-                               <p className="text-xs text-slate-400 font-medium truncate max-w-[300px]">{lesson.description || 'Tavsif yo\'q'}</p>
-                             </div>
+                            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center font-black text-blue-600 text-sm">
+                              {lesson.order}
+                            </div>
+                            <div>
+                              <h3 className="font-black text-slate-900">{lesson.title}</h3>
+                              <p className="text-xs text-slate-400 font-medium">{lesson.description || 'Tavsif yo\'q'}</p>
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => openLessonEditModal(lesson)} className="p-2 text-slate-400 hover:text-amber-600 transition-colors" title="Tahrirlash">
-                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                             </button>
                             <button onClick={() => handleDeleteLesson(lesson.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="O'chirish">
-                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                           </div>
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-10 bg-white border-2 border-dashed border-slate-100 rounded-3xl text-slate-400 font-bold">
-                        Ushbu kursda hali darslar yo'q.
+                        {/* Video info row */}
+                        <div className="border-t border-slate-100 pt-4">
+                          {lesson.video_source || lesson.video_file || lesson.video_url ? (
+                            <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+                              <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-black text-green-700 uppercase tracking-wider">Video mavjud</p>
+                                <p className="text-xs text-green-600 font-medium truncate">
+                                  {lesson.video_source || lesson.video_file || lesson.video_url}
+                                </p>
+                              </div>
+                              <a
+                                href={lesson.video_source || lesson.video_file || lesson.video_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-shrink-0 text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-green-700 transition-colors"
+                              >
+                                Ko'rish
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+                              <svg className="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                              <p className="text-xs font-black text-amber-700">Video biriktirilmagan</p>
+                              <button
+                                onClick={() => openLessonEditModal(lesson)}
+                                className="ml-auto flex-shrink-0 text-xs bg-amber-500 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-amber-600 transition-colors"
+                              >
+                                Video qo'shish
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )
-                  ) : (
-                    <div className="text-center py-10 bg-slate-50 border border-slate-100 rounded-3xl text-slate-400 font-bold">
-                        Darslar ro'yxatini ko'rish uchun kursni tanlang.
-                    </div>
+                    ))
                   )}
                 </div>
               </div>
@@ -900,10 +976,10 @@ export default function DashboardPage() {
       {/* Edit Lesson Modal */}
       {isLessonEditModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
               <h2 className="text-2xl font-black text-slate-900">Darsni tahrirlash</h2>
-              <button onClick={() => { setIsLessonEditModalOpen(false); setEditingLesson(null); setLessonForm({ ...lessonForm, title: '', description: '', homework_task: '', video_url: '', order: '0' }); }} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+              <button onClick={() => { setIsLessonEditModalOpen(false); setEditingLesson(null); setLessonVideoFile(null); }} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                 <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -918,14 +994,30 @@ export default function DashboardPage() {
                   <input type="number" className="admin-input" required value={lessonForm.order} onChange={(e) => setLessonForm({ ...lessonForm, order: e.target.value })} />
                 </div>
               </div>
+
+              {/* Current video info */}
+              {editingLesson && (editingLesson.video_source || editingLesson.video_file || editingLesson.video_url) && (
+                <div className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black text-blue-700 uppercase tracking-wider">Hozirgi video</p>
+                    <p className="text-xs text-blue-600 truncate">{editingLesson.video_source || editingLesson.video_file || editingLesson.video_url}</p>
+                  </div>
+                  <a href={editingLesson.video_source || editingLesson.video_file || editingLesson.video_url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-700 transition-colors">
+                    Ko'rish
+                  </a>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2">Video URL</label>
-                  <input className="admin-input" value={lessonForm.video_url} onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })} />
+                  <label className="block text-sm font-bold text-slate-600 mb-2">Video URL (yangilash)</label>
+                  <input className="admin-input" placeholder="https://youtube.com/..." value={lessonForm.video_url} onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2">Video faylni o'zgartirish</label>
-                  <input type="file" className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-slate-900 file:text-white" onChange={(e) => setLessonVideoFile(e.target.files ? e.target.files[0] : null)} />
+                  <label className="block text-sm font-bold text-slate-600 mb-2">Video faylni almashtirish</label>
+                  <input type="file" accept="video/*" className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-slate-900 file:text-white" onChange={(e) => setLessonVideoFile(e.target.files ? e.target.files[0] : null)} />
+                  {lessonVideoFile && <p className="text-xs text-blue-600 font-bold mt-1">✓ {lessonVideoFile.name}</p>}
                 </div>
               </div>
               <div>
@@ -936,14 +1028,32 @@ export default function DashboardPage() {
                 <label className="block text-sm font-bold text-slate-600 mb-2">Uyga vazifa</label>
                 <textarea className="admin-input h-24 resize-none" value={lessonForm.homework_task} onChange={(e) => setLessonForm({ ...lessonForm, homework_task: e.target.value })} />
               </div>
+
+              {isUploading && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold text-blue-700">
+                    <span>Yuklanmoqda...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div className="bg-blue-600 h-3 rounded-full transition-all duration-300 relative" style={{ width: `${uploadProgress}%` }}>
+                      <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => { setIsLessonEditModalOpen(false); setEditingLesson(null); setLessonForm({ ...lessonForm, title: '', description: '', homework_task: '', video_url: '', order: '0' }); }} className="flex-1 px-8 py-3 rounded-xl font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">Bekor qilish</button>
-                <button type="submit" className="flex-1 bimuz-btn-primary">Saqlash</button>
+                <button type="button" onClick={() => { setIsLessonEditModalOpen(false); setEditingLesson(null); setLessonVideoFile(null); }} className="flex-1 px-8 py-3 rounded-xl font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">Bekor qilish</button>
+                <button type="submit" disabled={isUploading} className={`flex-1 bimuz-btn-primary ${isUploading ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                  {isUploading ? `Yuklanmoqda... ${uploadProgress}%` : 'Saqlash'}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   );
 }

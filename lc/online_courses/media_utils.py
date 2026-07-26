@@ -1,17 +1,17 @@
+import mimetypes
 import os
 import re
-import mimetypes
+
 from django.http import StreamingHttpResponse
 
+
 def serve_range_file(request, file_path):
-    """
-    Serves a file with support for HTTP Range requests (seeking).
-    """
+    """Serve a file with support for HTTP Range requests (seeking)."""
     range_header = request.META.get('HTTP_RANGE', '').strip()
     range_match = re.match(r'bytes=(\d+)-(\d*)', range_header)
     file_size = os.path.getsize(file_path)
     content_type, _ = mimetypes.guess_type(file_path)
-    
+
     if range_match:
         first_byte, last_byte = range_match.groups()
         first_byte = int(first_byte) if first_byte else 0
@@ -19,7 +19,7 @@ def serve_range_file(request, file_path):
         if last_byte >= file_size:
             last_byte = file_size - 1
         length = last_byte - first_byte + 1
-        
+
         def file_iterator(size=8192):
             with open(file_path, 'rb') as f:
                 f.seek(first_byte)

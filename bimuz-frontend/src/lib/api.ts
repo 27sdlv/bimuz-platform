@@ -1,6 +1,27 @@
 import axios from 'axios';
 
+import toast from 'react-hot-toast';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/';
+
+/** DRF paginated responses use { results: [...] }; unwrap for the UI. */
+export function unwrapList<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data;
+  if (
+    data &&
+    typeof data === 'object' &&
+    'results' in data &&
+    Array.isArray((data as { results: T[] }).results)
+  ) {
+    return (data as { results: T[] }).results;
+  }
+  return [];
+}
+
+async function getList<T>(url: string, config?: Parameters<typeof api.get>[1]) {
+  const res = await api.get(url, config);
+  return { ...res, data: unwrapList<T>(res.data) };
+}
 
 const api = axios.create({
   baseURL: API_URL,
@@ -20,7 +41,17 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (typeof window !== 'undefined') {
+      const method = response.config.method?.toUpperCase();
+      if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        if (!response.config.url?.includes('auth/refresh') && !response.config.url?.includes('auth/me')) {
+          toast.success("Muvaffaqiyatli bajarildi!");
+        }
+      }
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     if (typeof window !== 'undefined' && error?.response?.status === 401 && !originalRequest._retry) {
@@ -41,6 +72,23 @@ api.interceptors.response.use(
       } else {
         window.location.href = '/login';
       }
+    } else if (typeof window !== 'undefined') {
+      let errorMsg = "Xatolik yuz berdi!";
+      if (error.response?.data) {
+        const data = error.response.data;
+        if (typeof data.detail === 'string') errorMsg = data.detail;
+        else if (typeof data.message === 'string') errorMsg = data.message;
+        else if (typeof data.error === 'string') errorMsg = data.error;
+        else if (typeof data === 'object') {
+          const firstValue = Object.values(data)[0];
+          if (Array.isArray(firstValue) && typeof firstValue[0] === 'string') {
+            errorMsg = firstValue[0];
+          } else if (typeof firstValue === 'string') {
+            errorMsg = firstValue;
+          }
+        }
+      }
+      toast.error(errorMsg);
     }
     return Promise.reject(error);
   }
@@ -53,28 +101,32 @@ export const authApi = {
 };
 
 export const courseApi = {
-  list: () => api.get('courses/'),
+  list: () => getList('courses/'),
   get: (id: string) => api.get(`courses/${id}/`),
   enroll: (id: string) => api.post(`courses/${id}/enroll/`),
   enrolled: () => api.get('courses/enrolled/'),
-  create: (data: FormData) => api.post('courses/', data, {
+  create: (data: FormData, onUploadProgress?: (e: any) => void) => api.post('courses/', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
   }),
-  update: (id: string, data: FormData) => api.patch(`courses/${id}/`, data, {
+  update: (id: string, data: FormData, onUploadProgress?: (e: any) => void) => api.patch(`courses/${id}/`, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
   }),
   remove: (id: string) => api.delete(`courses/${id}/`),
 };
 
 export const lessonApi = {
-  list: (courseId: string) => api.get(`lessons/?course_id=${courseId}`),
+  list: (courseId: string) => getList<any>(`lessons/?course_id=${courseId}`),
   get: (id: string) => api.get(`lessons/${id}/`),
   complete: (id: string) => api.post(`lessons/${id}/complete/`),
-  create: (data: FormData) => api.post('lessons/', data, {
+  create: (data: FormData, onUploadProgress?: (e: any) => void) => api.post('lessons/', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
   }),
-  update: (id: string, data: FormData) => api.patch(`lessons/${id}/`, data, {
+  update: (id: string, data: FormData, onUploadProgress?: (e: any) => void) => api.patch(`lessons/${id}/`, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
   }),
   remove: (id: string) => api.delete(`lessons/${id}/`),
 };
@@ -83,13 +135,13 @@ export const homeworkApi = {
   submit: (data: FormData) => api.post('homework/', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-  list: () => api.get('homework/'),
+  list: () => getList('homework/'),
   approve: (id: string) => api.post(`homework/${id}/approve/`),
   reject: (id: string, feedback: string) => api.post(`homework/${id}/reject/`, { feedback }),
 };
 
 export const groupApi = {
-  list: () => api.get('groups/', { headers: { 'X-Skip-Auth': '1' } }),
+  list: () => getList('groups/', { headers: { 'X-Skip-Auth': '1' } }),
   create: (data: any) => api.post('groups/', data),
   update: (id: string, data: any) => api.patch(`groups/${id}/`, data),
   remove: (id: string) => api.delete(`groups/${id}/`),
@@ -97,25 +149,25 @@ export const groupApi = {
 
 export const adminApi = {
   users: {
-    list: () => api.get('admin/users/'),
+    list: () => getList('admin/users/'),
     create: (data: any) => api.post('admin/users/', data),
     update: (id: string, data: any) => api.patch(`admin/users/${id}/`, data),
     remove: (id: string) => api.delete(`admin/users/${id}/`),
   },
   enrollments: {
-    list: () => api.get('admin/enrollments/'),
+    list: () => getList('admin/enrollments/'),
     create: (data: any) => api.post('admin/enrollments/', data),
     update: (id: string, data: any) => api.patch(`admin/enrollments/${id}/`, data),
     remove: (id: string) => api.delete(`admin/enrollments/${id}/`),
   },
   progress: {
-    list: () => api.get('admin/progress/'),
+    list: () => getList('admin/progress/'),
     create: (data: any) => api.post('admin/progress/', data),
     update: (id: string, data: any) => api.patch(`admin/progress/${id}/`, data),
     remove: (id: string) => api.delete(`admin/progress/${id}/`),
   },
   watches: {
-    list: () => api.get('admin/watches/'),
+    list: () => getList('admin/watches/'),
     create: (data: any) => api.post('admin/watches/', data),
     update: (id: string, data: any) => api.patch(`admin/watches/${id}/`, data),
     remove: (id: string) => api.delete(`admin/watches/${id}/`),

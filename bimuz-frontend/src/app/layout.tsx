@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "O'quv markazi uchun soddalashtirilgan o'quv tizimi",
 };
 
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -18,6 +20,7 @@ export default function RootLayout({
   return (
     <html lang="uz">
       <body className={`${inter.variable} antialiased`}>
+        <Toaster position="top-right" />
         <Navbar />
         {children}
       </body>

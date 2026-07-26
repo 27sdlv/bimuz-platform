@@ -1,8 +1,10 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { lessonApi, homeworkApi } from '@/lib/api';
 import Link from 'next/link';
+import Plyr from 'plyr-react';
+import 'plyr-react/plyr.css';
 
 function getYoutubeEmbedUrl(rawUrl?: string) {
   if (!rawUrl) return null;
@@ -55,6 +57,27 @@ export default function LessonDetailPage() {
   const [watchCompleted, setWatchCompleted] = useState(false);
   const [markingComplete, setMarkingComplete] = useState(false);
   const router = useRouter();
+  const plyrRef = useRef<any>(null);
+
+  useEffect(() => {
+    let player: any = null;
+    const interval = setInterval(() => {
+      if (plyrRef.current?.plyr) {
+        player = plyrRef.current.plyr;
+        if (!player._hasEndedEvent) {
+          player.on('ended', markVideoAsCompleted);
+          player._hasEndedEvent = true;
+        }
+      }
+    }, 500);
+    return () => {
+      clearInterval(interval);
+      if (player) {
+        player.off('ended', markVideoAsCompleted);
+        player._hasEndedEvent = false;
+      }
+    };
+  }, [watchCompleted, id]);
 
   useEffect(() => {
     const fetchLesson = async () => {
@@ -134,17 +157,22 @@ export default function LessonDetailPage() {
               allowFullScreen
             ></iframe>
           ) : isDirectVideo && videoSource ? (
-            <video
-              className="w-full h-full"
-              controls
-              controlsList="nodownload"
-              playsInline
-              preload="auto"
-              onEnded={markVideoAsCompleted}
-            >
-              <source src={videoSource} />
-              Brauzeringiz video formatni qo'llab-quvvatlamaydi.
-            </video>
+            <div className="w-full h-full [&_.plyr]:h-full [&_.plyr__video-wrapper]:h-full [&_.plyr__video-wrapper_video]:h-full [&_.plyr__video-wrapper_video]:object-cover">
+              <Plyr
+                ref={plyrRef}
+                source={{
+                  type: 'video',
+                  sources: [{ src: videoSource, provider: 'html5' }],
+                }}
+                options={{
+                  controls: [
+                    'play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'
+                  ],
+                  settings: ['quality', 'speed'],
+                  speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }
+                }}
+              />
+            </div>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4 px-6 text-center">
               <p className="font-bold italic">Video ichki playerda ochilmadi.</p>
